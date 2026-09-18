@@ -1,9 +1,13 @@
-# Resolve each ref to a commit SHA before release and record the binary checksum.
-lineage_gsi_project=https://github.com/AndyCGYan/lineage_build_unified
-lineage_version=18.1
-lineage_variant=arm64_bvS-vndklite
-f21_treble_patches=https://github.com/AshiVered/Android-custom-ROMs
-tt9=https://github.com/sspanak/tt9
-qinboard_t9=https://github.com/AshiVered/QinBoard-T9
-device_tree_reference=https://github.com/JTech-Forums/device_duoqin_k61v1_64_bsp
-kernel_reference=https://github.com/JamiKettunen/android_kernel_duoqin_mt6761
+# Locked 2026-09-19. Re-review before a release refresh.
+lineage_build_unified.url=https://github.com/AndyCGYan/lineage_build_unified
+lineage_build_unified.commit=301f406f6d0f213798afffb3be5c367cb8d20f2d
+lineage_gsi.filename=lineage-18.1-20240121-UNOFFICIAL-arm64_bvS-vndklite.img.xz
+lineage_gsi.url=https://sourceforge.net/projects/andyyan-gsi/files/lineage-18.x/lineage-18.1-20240121-UNOFFICIAL-arm64_bvS-vndklite.img.xz/download
+f21_treble_patches.url=https://github.com/AshiVered/Android-custom-ROMs
+f21_treble_patches.commit=8c87f5e79c60a175226f79a356fd096a43c3c9d1
+f21_treble_patches.path=Projects/Qin-F21Pro-treble-patches
+tt9.url=https://github.com/sspanak/tt9
+tt9.commit=05b92fcacbfe79b5339a60a3d8ddb614001907e2
+qinboard_t9.url=https://github.com/AshiVered/QinBoard-T9
+qinboard_t9.commit=cb9501d2d1169e6947e41ae5d24a3634564e5f5f
+lineage_gsi.xz_sha256=eb8c16d5335836727e3be34856c59423e04b029f64a2ff76a8e5d15db1d557fa
