@@ -17,6 +17,20 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 $ADB shell service check input | grep -q "found"
+# Dismiss emulator-only system watchdog windows that can sit above a healthy app.
+for _ in 1 2 3; do
+  $ADB shell input keyevent KEYCODE_DPAD_DOWN || true
+  $ADB shell input keyevent KEYCODE_ENTER || true
+  $ADB shell input keyevent KEYCODE_ESCAPE || true
+  sleep 1
+done
+$ADB shell am force-stop dev.mbaiforinstinct.f21os
+$ADB shell am start -n dev.mbaiforinstinct.f21os/.MainActivity
+sleep 2
+# Fail if a platform error dialog still owns the focused window.
+focus=$($ADB shell dumpsys window windows | grep -m1 'mCurrentFocus' || true)
+echo "$focus"
+[[ "$focus" == *dev.mbaiforinstinct.f21os* ]]
 $ADB exec-out screencap -p > screenshots/idle.png
 $ADB shell input keyevent KEYCODE_DPAD_CENTER
 sleep 1
