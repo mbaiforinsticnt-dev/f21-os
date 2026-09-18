@@ -46,6 +46,7 @@ jobs:
           script: |
             adb shell wm size 480x640
             adb shell wm density 286
+            chmod +x tools/emulator-proof.sh
             ./tools/emulator-proof.sh
       - uses: actions/upload-artifact@v4
         with:
