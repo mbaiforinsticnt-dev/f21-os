@@ -25,3 +25,11 @@ See [docs/DESIGN.md](docs/DESIGN.md).
 ## Development status
 
 Early emulator-first scaffold. Do not flash this repository to a phone yet.
+
+## Build
+
+```bash
+./gradlew clean assembleDebug
+```
+
+CI runs the same clean build on every push and uploads the debug APK as an Actions artifact. `tools/emulator-proof.sh` installs the APK on a running emulator and captures the idle screen, menu, and D-pad navigation proof at `screenshots/`.
