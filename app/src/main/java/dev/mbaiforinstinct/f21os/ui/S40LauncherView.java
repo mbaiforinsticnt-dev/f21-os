@@ -28,8 +28,9 @@ public final class S40LauncherView extends View {
 
     private void drawIdle(Canvas c) {
         int w = getWidth(), h = getHeight();
-        c.drawColor(Color.rgb(27, 72, 124));
-        p.setColor(Color.rgb(69, 132, 183)); c.drawRect(0, h * .38f, w, h, p);
+        c.drawColor(Color.rgb(50, 95, 158));
+        p.setColor(Color.rgb(182, 203, 234)); c.drawRect(0, 0, w, h * .38f, p);
+        p.setColor(Color.rgb(5, 7, 8)); c.drawRect(0, 0, w, h * .07f, p);
         p.setColor(Color.WHITE); p.setTextAlign(Paint.Align.CENTER); p.setTextSize(w * .15f);
         c.drawText(new SimpleDateFormat("HH:mm", Locale.UK).format(new Date()), w/2f, h*.29f, p);
         p.setTextSize(w*.046f); c.drawText(new SimpleDateFormat("EEE d MMM", Locale.UK).format(new Date()), w/2f, h*.36f, p);
@@ -42,7 +43,7 @@ public final class S40LauncherView extends View {
         float top=54, cellW=w/3f, cellH=(h-105)/3f;
         for(int i=0;i<apps.length;i++){
             int col=i%3,row=i/3; float left=col*cellW+6, y=top+row*cellH+6;
-            p.setColor(i==selected?Color.rgb(70,119,170):Color.WHITE);
+            p.setColor(i==selected?Color.rgb(32,32,36):Color.argb(205,255,255,255));
             c.drawRoundRect(new RectF(left,y,left+cellW-12,y+cellH-12),12,12,p);
             p.setColor(i==selected?Color.WHITE:Color.rgb(30,57,84)); p.setTextAlign(Paint.Align.CENTER); p.setTextSize(w*.032f);
             c.drawText(apps[i],left+(cellW-12)/2,y+cellH*.63f,p);
@@ -51,8 +52,8 @@ public final class S40LauncherView extends View {
     }
 
     private void drawSoftkeys(Canvas c,String left,String centre,String right){
-        int w=getWidth(),h=getHeight(); p.setColor(Color.rgb(236,240,242)); c.drawRect(0,h-46,w,h,p);
-        p.setColor(Color.rgb(20,40,64)); p.setTextSize(w*.038f); p.setTextAlign(Paint.Align.LEFT); c.drawText(left,12,h-16,p);
+        int w=getWidth(),h=getHeight(); p.setColor(Color.rgb(2,3,4)); c.drawRect(0,h-46,w,h,p);
+        p.setColor(Color.WHITE); p.setTextSize(w*.038f); p.setTextAlign(Paint.Align.LEFT); c.drawText(left,12,h-16,p);
         p.setTextAlign(Paint.Align.CENTER); c.drawText(centre,w/2f,h-16,p);
         p.setTextAlign(Paint.Align.RIGHT); c.drawText(right,w-12,h-16,p);
     }
