@@ -16,7 +16,7 @@ public final class LauncherProofTest {
     private void shot(MainActivity a, String name) throws Exception {
         Bitmap b=Bitmap.createBitmap(a.getWindow().getDecorView().getWidth(),a.getWindow().getDecorView().getHeight(),Bitmap.Config.ARGB_8888);
         a.getWindow().getDecorView().draw(new Canvas(b));
-        File d=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"proof"); d.mkdirs();
+        File d=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getFilesDir(),"proof"); d.mkdirs();
         try(FileOutputStream o=new FileOutputStream(new File(d,name))){b.compress(Bitmap.CompressFormat.PNG,100,o);}
     }
     @Test public void captureKeyNavigation() throws Exception {
