@@ -51,6 +51,9 @@ jobs:
             adb shell wm density 286
             chmod +x tools/emulator-proof.sh
             ./tools/emulator-proof.sh
+      - name: Validate PNG signatures
+        run: |
+          for f in screenshots/*.png; do test "$(head -c 8 "$f" | xxd -p)" = "89504e470d0a1a0a"; done
       - uses: actions/upload-artifact@v4
         with:
           name: f21-os-emulator-proof
