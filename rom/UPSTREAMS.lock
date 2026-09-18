@@ -1,0 +1,9 @@
+# Resolve each ref to a commit SHA before release and record the binary checksum.
+lineage_gsi_project=https://github.com/AndyCGYan/lineage_build_unified
+lineage_version=18.1
+lineage_variant=arm64_bvS-vndklite
+f21_treble_patches=https://github.com/AshiVered/Android-custom-ROMs
+tt9=https://github.com/sspanak/tt9
+qinboard_t9=https://github.com/AshiVered/QinBoard-T9
+device_tree_reference=https://github.com/JTech-Forums/device_duoqin_k61v1_64_bsp
+kernel_reference=https://github.com/JamiKettunen/android_kernel_duoqin_mt6761
