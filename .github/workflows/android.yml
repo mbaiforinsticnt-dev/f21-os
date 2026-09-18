@@ -38,7 +38,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - run: gradle --no-daemon assembleDebug
+      - run: gradle --no-daemon assembleDebug assembleDebugAndroidTest
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
@@ -49,10 +49,6 @@ jobs:
           script: |
             adb shell wm size 480x640
             adb shell wm density 286
-            adb shell settings put global window_animation_scale 0
-            adb shell settings put global transition_animation_scale 0
-            adb shell settings put global animator_duration_scale 0
-            adb shell settings put global policy_control immersive.full=*
             chmod +x tools/emulator-proof.sh
             ./tools/emulator-proof.sh
       - uses: actions/upload-artifact@v4
