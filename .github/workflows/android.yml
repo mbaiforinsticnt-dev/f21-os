@@ -51,3 +51,5 @@ jobs:
         with:
           name: f21-os-emulator-proof
           path: screenshots/*.png
+      - name: Verify screenshots exist
+        run: test -s screenshots/idle.png -a -s screenshots/menu.png -a -s screenshots/menu-key-navigation.png
