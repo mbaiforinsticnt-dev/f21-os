@@ -15,7 +15,7 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - run: ./gradlew --no-daemon clean assembleDebug
+      - run: chmod +x gradlew && ./gradlew --no-daemon clean assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: f21-os-debug
@@ -29,7 +29,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - run: ./gradlew --no-daemon assembleDebug
+      - run: chmod +x gradlew && ./gradlew --no-daemon assembleDebug
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
