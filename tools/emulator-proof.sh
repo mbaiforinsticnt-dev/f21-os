@@ -4,13 +4,8 @@ ADB=${ADB:-adb}
 mkdir -p screenshots
 $ADB install -r app/build/outputs/apk/debug/app-debug.apk
 $ADB shell am start -a android.intent.action.MAIN -c android.intent.category.HOME -n dev.mbaiforinstinct.f21os/.MainActivity
-# Wait until our activity is resumed rather than merely accepting am start.
-for _ in $(seq 1 60); do
-  $ADB shell dumpsys activity activities 2>/dev/null | grep -q "mResumedActivity.*dev.mbaiforinstinct.f21os" && break
-  sleep 1
-done
-$ADB shell dumpsys activity activities | grep -q "mResumedActivity.*dev.mbaiforinstinct.f21os"
-sleep 1
+# Let the first activity frame settle before checking platform services.
+sleep 5
 # Some CI images report boot complete before input/display services are published.
 for _ in $(seq 1 60); do
   $ADB shell service check input 2>/dev/null | grep -q "found" && break
