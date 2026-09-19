@@ -20,7 +20,7 @@ jobs:
             repo: sspanak/tt9
             ref: 05b92fcacbfe79b5339a60a3d8ddb614001907e2
             java: '21'
-            task: assembleFullDebug
+            task: generateDocs validateLanguages buildDefinition buildDictionaryDownloads copyDownloadsToAssets assembleFullDebug
           - name: qinboard
             repo: AshiVered/QinBoard-T9
             ref: cb9501d2d1169e6947e41ae5d24a3634564e5f5f
@@ -42,12 +42,6 @@ jobs:
       - name: Patch dead jcenter repository (qinboard)
         if: matrix.name == 'qinboard'
         run: sed -i '/jcenter/d' src-ime/build.gradle
-      - name: Accept SDK licenses and install platform 37 (tt9)
-        if: matrix.name == 'tt9'
-        run: |
-          SDKM="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$SDKM" --licenses >/dev/null 2>&1 || true
-          "$SDKM" "platforms;android-37"
       - name: Build IME
         run: |
           cd src-ime
