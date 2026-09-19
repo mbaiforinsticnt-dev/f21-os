@@ -74,6 +74,19 @@ anr_up() {
   $ADB shell dumpsys window windows 2>/dev/null | tr -d '\r' | grep -iE 'mCurrentFocus|mFocusedApp' | grep -qiE 'not responding|application error'
 }
 
+restart_systemui() {
+  # AOSP emulator images are userdebug; with adbd as root, kill the (possibly wedged)
+  # SystemUI - it auto-restarts as a persistent app and comes back clean.
+  local pid
+  pid=$($ADB shell pidof com.android.systemui 2>/dev/null | tr -d '\r' || true)
+  if [ -n "$pid" ]; then
+    echo "== restarting SystemUI (pid $pid)" >&2
+    $ADB shell kill "$pid" 2>/dev/null || true
+    sleep 12
+    wait_services || true
+  fi
+}
+
 dismiss_anr() {
   anr_up || return 0
   local xml x1 y1 x2 y2 line
@@ -100,6 +113,14 @@ shot() {
     anr_up || break
     dismiss_anr || true
   done
+  if anr_up; then
+    echo "!! taps failed; restarting SystemUI as last resort" >&2
+    restart_systemui
+    for i in 1 2 3; do
+      anr_up || break
+      dismiss_anr || true
+    done
+  fi
   anr_up && echo "!! ANR dialog still up before $1; capturing anyway" >&2
   echo "== focus before $1:" >&2
   $ADB shell dumpsys window windows 2>/dev/null | tr -d '\r' | grep -iE 'mCurrentFocus|mFocusedApp' >&2 || true
@@ -113,6 +134,10 @@ wait_services
 $ADB shell settings put global hide_error_dialogs 1 || true
 $ADB shell settings put global anr_show_background 1 || true
 sleep 30
+$ADB root >/dev/null 2>&1 || true
+$ADB wait-for-device || true
+wait_services || true
+restart_systemui
 echo "== emulator booted, services up, error dialogs suppressed"
 
 run_ime() {
@@ -136,6 +161,7 @@ run_ime() {
   sleep 10
   dismiss_anr || true
   dismiss_anr || true
+  restart_systemui
   install_retry app/build/outputs/apk/debug/app-debug.apk
   start_harness
   shot "screenshots-t9/$name-01-harness.png"
