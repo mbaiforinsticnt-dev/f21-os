@@ -10,8 +10,8 @@ TT9_ID="io.github.sspanak.tt9/.ime.TraditionalT9"
 mkdir -p screenshots-ime
 
 wait_boot() {
-  local bc=""
-  for _ in $(seq 1 90); do
+  local tries=${1:-90} bc=""
+  for _ in $(seq 1 "$tries"); do
     bc=$($ADB shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
     [ "$bc" = "1" ] && return 0
     sleep 4
@@ -58,7 +58,10 @@ printf '%s\n' "$remount_out"
 if printf '%s\n' "$remount_out" | grep -qi 'reboot'; then
   echo "== overlayfs staged; rebooting to activate it"
   $ADB reboot || true
-  wait_boot
+  sleep 15
+  $ADB wait-for-device
+  # First boot with overlayfs active can take several minutes.
+  wait_boot 180
   $ADB root >/dev/null 2>&1 || true
   $ADB wait-for-device
   wait_services
