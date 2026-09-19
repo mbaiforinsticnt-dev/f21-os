@@ -44,7 +44,7 @@ install_retry() {
 discover_ime() {
   local match="$1" out="" all=""
   for _ in $(seq 1 20); do
-    all=$($ADB shell ime list -s 2>/dev/null | tr -d '\r' || true)
+    all=$($ADB shell ime list -s -a 2>/dev/null | tr -d '\r' || true)
     if [ -n "$all" ]; then
       out=$(printf '%s\n' "$all" | grep -i "$match" || true)
       out=${out%%$'\n'*}
@@ -55,7 +55,7 @@ discover_ime() {
     fi
     sleep 3
   done
-  echo "!! no IME matching '$match' after 20 tries; last 'ime list -s' output:" >&2
+  echo "!! no IME matching '$match' after 20 tries; last 'ime list -s -a' output:" >&2
   printf '%s\n' "$all" >&2
   echo "!! installed packages matching IME vendors:" >&2
   $ADB shell pm list packages | tr -d '\r' | grep -iE 'spanak|nyanya|ashivered' >&2 || true
