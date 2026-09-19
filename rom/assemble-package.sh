@@ -7,6 +7,12 @@ OUT=${2:-$ROOT/out/f21-os-hardware-ready}
 mkdir -p "$OUT/images" "$OUT/tools" "$OUT/docs"
 cp "$GSI" "$OUT/images/system-lineage18.1-vndklite.img"
 cp "$ROOT/app/build/outputs/apk/debug/app-debug.apk" "$OUT/f21-os-launcher.apk"
+# Default keyboard: build the pinned Traditional T9 APK (English-only) and ship it
+# with the bundle. rom/scripts/inject-f21-apps.sh places it in the system image at
+# flash time, together with the launcher (priv-app) and the privapp allowlist.
+"$ROOT/rom/scripts/fetch-tt9.sh" "$ROOT/out/tt9"
+cp "$ROOT/out/tt9/TraditionalT9.apk" "$OUT/images/TraditionalT9.apk"
+cp "$ROOT/rom/prebuilts/privapp-permissions-f21os.xml" "$OUT/images/"
 cp "$ROOT/rom/debloat-packages.txt" "$ROOT/rom/PACKAGE-MANIFEST.md" "$OUT/"
 cp "$ROOT/rom/scripts/"*.sh "$OUT/tools/"
 cp "$ROOT/docs/UNLOCK-FLASH-RESTORE.md" "$ROOT/docs/BUYING-GUIDE.md" "$OUT/docs/"
