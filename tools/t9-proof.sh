@@ -101,6 +101,8 @@ shot() {
     dismiss_anr || true
   done
   anr_up && echo "!! ANR dialog still up before $1; capturing anyway" >&2
+  echo "== focus before $1:" >&2
+  $ADB shell dumpsys window windows 2>/dev/null | tr -d '\r' | grep -iE 'mCurrentFocus|mFocusedApp' >&2 || true
   $ADB exec-out screencap -p > "$1"
 }
 
