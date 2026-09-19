@@ -83,8 +83,7 @@ jobs:
           api-level: 30
           arch: x86_64
           profile: pixel
-          cores: 4
-          emulator-options: -no-window -noaudio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -partition-size 2048
+          emulator-options: -no-window -noaudio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
           script: |
             adb shell wm size 480x640
