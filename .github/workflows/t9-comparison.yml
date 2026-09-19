@@ -45,8 +45,9 @@ jobs:
       - name: Accept SDK licenses and install platform 37 (tt9)
         if: matrix.name == 'tt9'
         run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platforms;android-37"
+          SDKM="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses >/dev/null 2>&1 || true
+          "$SDKM" "platforms;android-37"
       - name: Build IME
         run: |
           cd src-ime
