@@ -15,7 +15,12 @@ import dev.mbaiforinstinct.f21os.ui.S40LauncherView;
 /** Bridges the Nokia-style key shell to Android's hardware-backed system apps. */
 public final class MainActivity extends Activity implements S40LauncherView.Actions {
     private S40LauncherView launcher;
-    @Override public void onCreate(Bundle state) { super.onCreate(state); launcher = new S40LauncherView(this,this); setContentView(launcher); }
+    @Override public void onCreate(Bundle state) {
+        super.onCreate(state);
+        launcher = new S40LauncherView(this,this);
+        setContentView(launcher);
+        ImeSetup.ensureDefaultIme(this);
+    }
     @Override public boolean dispatchKeyEvent(KeyEvent event) { return launcher.handleKey(event) || super.dispatchKeyEvent(event); }
     @Override public void open(String section,String item,String input){
         Intent i=null;
