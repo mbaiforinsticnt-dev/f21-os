@@ -68,30 +68,39 @@ start_harness() {
   sleep 3
 }
 
+anr_up() {
+  # ANR/error dialogs are owned by WindowManager, not SystemUI, so dumpsys stays reliable
+  # even when SystemUI is wedged (uiautomator dump fails exactly then).
+  $ADB shell dumpsys window windows 2>/dev/null | tr -d '\r' | grep -iE 'mCurrentFocus|mFocusedApp' | grep -qiE 'not responding|application error'
+}
+
 dismiss_anr() {
-  # If a "System UI isn't responding" (or similar) dialog is up, tap its Wait button.
-  $ADB shell uiautomator dump /sdcard/__f21_ui.xml >/dev/null 2>&1 || return 0
-  local xml bounds nums
-  xml=$($ADB shell cat /sdcard/__f21_ui.xml 2>/dev/null || true)
-  [ -z "$xml" ] && return 0
-  printf '%s' "$xml" | grep -q "responding" || return 0
-  bounds=$(printf '%s' "$xml" | tr '<' '\n' | grep 'text="Wait"' | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -n 1 | sed 's/bounds="//; s/"$//')
-  [ -z "$bounds" ] && return 0
-  nums=$(printf '%s' "$bounds" | tr -d '[]' | tr ',' ' ')
-  local x1 y1 x2 y2
-  x1=$(printf '%s' "$nums" | cut -d' ' -f1)
-  y1=$(printf '%s' "$nums" | cut -d' ' -f2)
-  x2=$(printf '%s' "$nums" | cut -d' ' -f3)
-  y2=$(printf '%s' "$nums" | cut -d' ' -f4)
-  if [ -z "$x1" ] || [ -z "$x2" ]; then return 0; fi
-  echo "!! ANR dialog detected; tapping Wait at ($(( (x1+x2)/2 )),$(( (y1+y2)/2 )))" >&2
-  $ADB shell input tap $(( (x1+x2)/2 )) $(( (y1+y2)/2 )) || true
+  anr_up || return 0
+  local xml x1 y1 x2 y2 line
+  xml=$($ADB shell uiautomator dump /sdcard/__f21_ui.xml >/dev/null 2>&1; $ADB shell cat /sdcard/__f21_ui.xml 2>/dev/null || true)
+  line=$(printf '%s' "$xml" | tr '<' '\n' | grep 'text="Wait"' | head -n 1 || true)
+  x1=$(printf '%s' "$line" | sed -n 's/.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]".*/\1/p')
+  y1=$(printf '%s' "$line" | sed -n 's/.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]".*/\2/p')
+  x2=$(printf '%s' "$line" | sed -n 's/.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]".*/\3/p')
+  y2=$(printf '%s' "$line" | sed -n 's/.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]".*/\4/p')
+  if [ -n "$x1" ] && [ -n "$x2" ] && [ "$x1" -lt 480 ] && [ "$x2" -le 480 ] && [ "$y1" -lt 640 ] && [ "$y2" -le 640 ]; then
+    echo "!! ANR dialog up; tapping Wait at ($(( (x1+x2)/2 )),$(( (y1+y2)/2 )))" >&2
+    $ADB shell input tap $(( (x1+x2)/2 )) $(( (y1+y2)/2 )) || true
+  else
+    # uiautomator failed or returned garbage; blind-tap the fixed Wait-row position (480x640 dialog layout)
+    echo "!! ANR dialog up; blind-tapping Wait at (240,445)" >&2
+    $ADB shell input tap 240 445 || true
+  fi
   sleep 2
 }
 
 shot() {
-  dismiss_anr || true
-  dismiss_anr || true
+  local i
+  for i in 1 2 3 4 5 6; do
+    anr_up || break
+    dismiss_anr || true
+  done
+  anr_up && echo "!! ANR dialog still up before $1; capturing anyway" >&2
   $ADB exec-out screencap -p > "$1"
 }
 
@@ -122,6 +131,9 @@ run_ime() {
   $ADB shell ime enable "$imeid"
   $ADB shell ime set "$imeid"
   echo "== $name active ime: $($ADB shell settings get secure default_input_method | tr -d '\r')"
+  sleep 10
+  dismiss_anr || true
+  dismiss_anr || true
   install_retry app/build/outputs/apk/debug/app-debug.apk
   start_harness
   shot "screenshots-t9/$name-01-harness.png"
