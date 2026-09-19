@@ -52,16 +52,25 @@ $ADB wait-for-device
 wait_services
 
 echo "== remounting system writable"
-if ! $ADB remount; then
-  echo "== remount needs a reboot; retrying after reboot"
+remount_out=$($ADB remount 2>&1 || true)
+printf '%s\n' "$remount_out"
+# The first remount only STAGES the overlayfs; it takes effect after a reboot.
+if printf '%s\n' "$remount_out" | grep -qi 'reboot'; then
+  echo "== overlayfs staged; rebooting to activate it"
   $ADB reboot || true
   wait_boot
   $ADB root >/dev/null 2>&1 || true
   $ADB wait-for-device
   wait_services
-  $ADB remount
+  remount_out=$($ADB remount 2>&1 || true)
+  printf '%s\n' "$remount_out"
+  sleep 3
 fi
-sleep 3
+echo "== probing /system writability"
+if ! $ADB shell 'touch /system/.f21w && rm /system/.f21w' >/dev/null 2>&1; then
+  echo "!! /system still read-only after remount" >&2
+  exit 1
+fi
 
 echo "== injecting apps into the system image"
 tt9apk=$(find imes/tt9 -name '*.apk' | head -n 1)
