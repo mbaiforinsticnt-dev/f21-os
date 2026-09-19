@@ -1,6 +1,6 @@
 # ROM integration workspace
 
-This directory will hold pinned manifests, overlays, patch scripts and packaging notes for the LineageOS 18.1 GSI base. It deliberately contains no stock firmware or private keys.
+This directory holds pinned manifests, overlays, patch scripts and packaging notes for the LineageOS 18.1 GSI base. It deliberately contains no stock firmware or private keys.
 
 Before touching hardware:
 
