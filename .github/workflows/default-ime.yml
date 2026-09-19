@@ -1,0 +1,105 @@
+name: Default IME proof
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/default-ime.yml'
+      - 'app/**'
+      - 'rom/**'
+      - 'tools/default-ime-proof.sh'
+  workflow_dispatch:
+
+jobs:
+  build-tt9:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: sspanak/tt9
+          ref: 05b92fcacbfe79b5339a60a3d8ddb614001907e2
+          path: src-ime
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: false
+      - name: Trim tt9 languages to English (keep the APK image-sized)
+        run: find src-ime/app/languages/definitions -name '*.yml' ! -name 'English.yml' -delete
+      - name: Build Traditional T9
+        run: |
+          cd src-ime
+          chmod +x gradlew
+          ./gradlew --no-daemon generateDocs validateLanguages buildDefinition buildDictionaryDownloads copyDownloadsToAssets assembleFullDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ime-tt9
+          path: 'src-ime/**/build/outputs/apk/**/*.apk'
+
+  build-launcher:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+          validate-wrappers: false
+      - run: gradle --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+  emulator-proof:
+    needs: [build-tt9, build-launcher]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ime-tt9
+          path: imes/tt9
+      - uses: actions/download-artifact@v4
+        with:
+          name: launcher
+          path: app/build/outputs/apk/debug
+      - name: Static checks on the injected payloads
+        run: |
+          bash -n tools/default-ime-proof.sh
+          bash -n rom/scripts/fetch-tt9.sh
+          bash -n rom/scripts/inject-f21-apps.sh
+          python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('rom/prebuilts/privapp-permissions-f21os.xml')"
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          profile: pixel
+          emulator-options: -no-window -noaudio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -writable-system -memory 4096 -partition-size 2048
+          disable-animations: true
+          script: |
+            adb shell wm size 480x640
+            adb shell wm density 286
+            chmod +x tools/default-ime-proof.sh
+            ./tools/default-ime-proof.sh
+      - name: Validate PNG signature
+        run: test "$(head -c 8 screenshots-ime/default-ime-harness.png | xxd -p)" = "89504e470d0a1a0a"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: default-ime-screenshots
+          path: screenshots-ime/*.png
+      - name: Publish screenshots to branch
+        run: |
+          git config user.name "F21 OS CI"
+          git config user.email "f21-os-ci@users.noreply.github.com"
+          git add screenshots-ime/*.png
+          git commit -m "Add default-IME proof screenshots" || exit 0
+          git push --force origin HEAD:refs/heads/screenshots-default-ime
