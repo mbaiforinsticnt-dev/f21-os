@@ -70,7 +70,12 @@ start_harness() {
 
 wait_boot
 wait_services
-echo "== emulator booted, services up"
+# Suppress ANR/crash dialogs (System UI ANR'd under swiftshader in run #9 and a
+# modal dialog ate every stage screenshot) and let SystemUI settle after boot.
+$ADB shell settings put global hide_error_dialogs 1 || true
+$ADB shell settings put global anr_show_background 1 || true
+sleep 20
+echo "== emulator booted, services up, error dialogs suppressed"
 
 run_ime() {
   local name="$1" match="$2"
