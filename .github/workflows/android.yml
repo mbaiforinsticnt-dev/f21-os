@@ -10,6 +10,7 @@ on:
 
 jobs:
   debug-apk:
+    if: github.event.head_commit.message != 'Add emulator proof screenshots'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +29,7 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
 
   emulator-proof:
+    if: github.event.head_commit.message != 'Add emulator proof screenshots'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +66,7 @@ jobs:
           git config user.email "f21-os-ci@users.noreply.github.com"
           git add screenshots/*.png
           git commit -m "Add emulator proof screenshots" || exit 0
+          git reset --hard HEAD
           git fetch origin main
           git rebase origin/main
           git push
