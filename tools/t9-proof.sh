@@ -2,25 +2,61 @@
 set -euo pipefail
 ADB=${ADB:-adb}
 mkdir -p screenshots-t9
-for _ in $(seq 1 60); do
-  $ADB shell service check package 2>/dev/null | grep -q "found" && break
-  sleep 2
-done
-$ADB shell service check package | grep -q "found"
 
-discover_ime() {
-  local match="$1" out=""
-  for _ in $(seq 1 15); do
-    out=$($ADB shell ime list -s 2>/dev/null | tr -d '\r' | grep -i "$match" || true)
-    out=${out%%$'\n'*}
-    if [ -n "$out" ]; then
-      printf '%s' "$out"
+wait_boot() {
+  local bc=""
+  for _ in $(seq 1 90); do
+    bc=$($ADB shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
+    [ "$bc" = "1" ] && return 0
+    sleep 4
+  done
+  echo "!! emulator never reported sys.boot_completed=1" >&2
+  return 1
+}
+
+wait_services() {
+  for _ in $(seq 1 30); do
+    if $ADB shell service check package 2>/dev/null | grep -q "found" \
+       && $ADB shell service check input_method 2>/dev/null | grep -q "found"; then
       return 0
     fi
-    sleep 2
+    sleep 3
   done
-  echo "!! no IME matching '$match' after 15 tries; full 'ime list -s' output:" >&2
-  $ADB shell ime list -s >&2 || true
+  echo "!! package/input_method services not up" >&2
+  return 1
+}
+
+install_retry() {
+  local apk="$1"
+  for i in 1 2 3 4 5; do
+    if $ADB install -r --no-streaming "$apk"; then
+      return 0
+    fi
+    echo "!! install attempt $i failed for $apk; re-waiting for device/services" >&2
+    $ADB wait-for-device || true
+    wait_services || true
+    sleep 10
+  done
+  echo "!! could not install $apk after 5 attempts" >&2
+  return 1
+}
+
+discover_ime() {
+  local match="$1" out="" all=""
+  for _ in $(seq 1 20); do
+    all=$($ADB shell ime list -s 2>/dev/null | tr -d '\r' || true)
+    if [ -n "$all" ]; then
+      out=$(printf '%s\n' "$all" | grep -i "$match" || true)
+      out=${out%%$'\n'*}
+      if [ -n "$out" ]; then
+        printf '%s' "$out"
+        return 0
+      fi
+    fi
+    sleep 3
+  done
+  echo "!! no IME matching '$match' after 20 tries; last 'ime list -s' output:" >&2
+  printf '%s\n' "$all" >&2
   echo "!! installed packages matching IME vendors:" >&2
   $ADB shell pm list packages | tr -d '\r' | grep -iE 'spanak|nyanya|ashivered' >&2 || true
   return 1
@@ -32,16 +68,17 @@ start_harness() {
   sleep 3
 }
 
+wait_boot
+wait_services
+echo "== emulator booted, services up"
+
 run_ime() {
   local name="$1" match="$2"
   local apk
   apk=$(find "imes/$name" -name '*.apk')
   apk=${apk%%$'\n'*}
   echo "== $name apk: $apk"
-  for _ in 1 2 3; do
-    $ADB install -r "$apk" && break
-    sleep 5
-  done
+  install_retry "$apk"
   sleep 2
   if [ "$name" = "qinboard" ]; then
     $ADB shell appops set aiv.ashivered.qinboard.t9 MANAGE_EXTERNAL_STORAGE allow || true
@@ -53,10 +90,7 @@ run_ime() {
   $ADB shell ime enable "$imeid"
   $ADB shell ime set "$imeid"
   echo "== $name active ime: $($ADB shell settings get secure default_input_method | tr -d '\r')"
-  for _ in 1 2 3; do
-    $ADB install -r app/build/outputs/apk/debug/app-debug.apk && break
-    sleep 5
-  done
+  install_retry app/build/outputs/apk/debug/app-debug.apk
   start_harness
   $ADB exec-out screencap -p > "screenshots-t9/$name-01-harness.png"
   # Stage 2: multi-tap attempt - "hi" (44 then 444, pauses to commit letters)
