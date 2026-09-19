@@ -42,6 +42,9 @@ jobs:
       - name: Patch dead jcenter repository (qinboard)
         if: matrix.name == 'qinboard'
         run: sed -i '/jcenter/d' src-ime/build.gradle
+      - name: Trim tt9 languages to English (keep APK emulator-sized)
+        if: matrix.name == 'tt9'
+        run: find src-ime/app/languages/definitions -name '*.yml' ! -name 'English.yml' -delete
       - name: Build IME
         run: |
           cd src-ime
