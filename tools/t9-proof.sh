@@ -68,13 +68,40 @@ start_harness() {
   sleep 3
 }
 
+dismiss_anr() {
+  # If a "System UI isn't responding" (or similar) dialog is up, tap its Wait button.
+  $ADB shell uiautomator dump /sdcard/__f21_ui.xml >/dev/null 2>&1 || return 0
+  local xml bounds nums
+  xml=$($ADB shell cat /sdcard/__f21_ui.xml 2>/dev/null || true)
+  [ -z "$xml" ] && return 0
+  printf '%s' "$xml" | grep -q "responding" || return 0
+  bounds=$(printf '%s' "$xml" | tr '<' '\n' | grep 'text="Wait"' | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -n 1 | sed 's/bounds="//; s/"$//')
+  [ -z "$bounds" ] && return 0
+  nums=$(printf '%s' "$bounds" | tr -d '[]' | tr ',' ' ')
+  local x1 y1 x2 y2
+  x1=$(printf '%s' "$nums" | cut -d' ' -f1)
+  y1=$(printf '%s' "$nums" | cut -d' ' -f2)
+  x2=$(printf '%s' "$nums" | cut -d' ' -f3)
+  y2=$(printf '%s' "$nums" | cut -d' ' -f4)
+  if [ -z "$x1" ] || [ -z "$x2" ]; then return 0; fi
+  echo "!! ANR dialog detected; tapping Wait at ($(( (x1+x2)/2 )),$(( (y1+y2)/2 )))" >&2
+  $ADB shell input tap $(( (x1+x2)/2 )) $(( (y1+y2)/2 )) || true
+  sleep 2
+}
+
+shot() {
+  dismiss_anr || true
+  dismiss_anr || true
+  $ADB exec-out screencap -p > "$1"
+}
+
 wait_boot
 wait_services
 # Suppress ANR/crash dialogs (System UI ANR'd under swiftshader in run #9 and a
 # modal dialog ate every stage screenshot) and let SystemUI settle after boot.
 $ADB shell settings put global hide_error_dialogs 1 || true
 $ADB shell settings put global anr_show_background 1 || true
-sleep 20
+sleep 30
 echo "== emulator booted, services up, error dialogs suppressed"
 
 run_ime() {
@@ -97,14 +124,14 @@ run_ime() {
   echo "== $name active ime: $($ADB shell settings get secure default_input_method | tr -d '\r')"
   install_retry app/build/outputs/apk/debug/app-debug.apk
   start_harness
-  $ADB exec-out screencap -p > "screenshots-t9/$name-01-harness.png"
+  shot "screenshots-t9/$name-01-harness.png"
   # Stage 2: multi-tap attempt - "hi" (44 then 444, pauses to commit letters)
   $ADB shell input keyevent KEYCODE_4; sleep 0.3
   $ADB shell input keyevent KEYCODE_4; sleep 1.6
   $ADB shell input keyevent KEYCODE_4; sleep 0.3
   $ADB shell input keyevent KEYCODE_4; sleep 0.3
   $ADB shell input keyevent KEYCODE_4; sleep 1.6
-  $ADB exec-out screencap -p > "screenshots-t9/$name-02-multitap-hi.png"
+  shot "screenshots-t9/$name-02-multitap-hi.png"
   # Stage 3: predictive attempt on a clean field - 43556 ("hello" in T9)
   start_harness
   $ADB shell input keyevent KEYCODE_4; sleep 0.3
@@ -112,13 +139,13 @@ run_ime() {
   $ADB shell input keyevent KEYCODE_5; sleep 0.3
   $ADB shell input keyevent KEYCODE_5; sleep 0.3
   $ADB shell input keyevent KEYCODE_6; sleep 1.0
-  $ADB exec-out screencap -p > "screenshots-t9/$name-03-predict-43556.png"
+  shot "screenshots-t9/$name-03-predict-43556.png"
   # Stage 4: backspace behaviour
   $ADB shell input keyevent KEYCODE_DEL; sleep 0.6
-  $ADB exec-out screencap -p > "screenshots-t9/$name-04-del.png"
+  shot "screenshots-t9/$name-04-del.png"
   # Stage 5: mode-switch key behaviour (POUND)
   $ADB shell input keyevent KEYCODE_POUND; sleep 0.6
-  $ADB exec-out screencap -p > "screenshots-t9/$name-05-pound.png"
+  shot "screenshots-t9/$name-05-pound.png"
   $ADB shell am force-stop dev.mbaiforinstinct.f21os
 }
 
