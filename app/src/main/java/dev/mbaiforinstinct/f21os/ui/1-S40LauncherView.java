@@ -15,6 +15,8 @@ import java.util.Locale;
 /** C2-derived key-first launcher shell for the Qin F21 Pro's 480x640 display. */
 public final class S40LauncherView extends View {
     private enum Screen { IDLE, MENU, LIST, DETAIL }
+    public interface Actions { void open(String section, String item, String input); }
+    private final Actions actions;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final String[] apps = {"Messaging", "Contacts", "Call log", "Gallery", "Organiser", "Settings", "Music", "Radio", "Applications"};
     private final String[][] items = {
@@ -30,7 +32,7 @@ public final class S40LauncherView extends View {
     private int selected = 0, row = 0;
     private final StringBuilder input = new StringBuilder();
 
-    public S40LauncherView(Context context) { super(context); setFocusable(true); }
+    public S40LauncherView(Context context, Actions actions) { super(context); this.actions=actions; setFocusable(true); }
 
     @Override protected void onDraw(Canvas c) { super.onDraw(c); if(screen==Screen.IDLE) drawIdle(c); else if(screen==Screen.MENU) drawMenu(c); else if(screen==Screen.LIST) drawList(c); else drawDetail(c); }
 
@@ -81,7 +83,7 @@ public final class S40LauncherView extends View {
     public boolean handleKey(KeyEvent e){if(e.getAction()!=KeyEvent.ACTION_DOWN)return false;int k=e.getKeyCode();
         if(screen==Screen.IDLE&&(k==KeyEvent.KEYCODE_DPAD_CENTER||k==KeyEvent.KEYCODE_ENTER)){screen=Screen.MENU;invalidate();return true;}
         if(screen==Screen.MENU){if(k==KeyEvent.KEYCODE_BACK||k==KeyEvent.KEYCODE_SOFT_RIGHT||k==KeyEvent.KEYCODE_ENDCALL){screen=Screen.IDLE;invalidate();return true;}if(k==KeyEvent.KEYCODE_DPAD_CENTER||k==KeyEvent.KEYCODE_ENTER){row=0;screen=Screen.LIST;invalidate();return true;}if(k==KeyEvent.KEYCODE_DPAD_LEFT)selected=(selected%3==0)?selected+2:selected-1;else if(k==KeyEvent.KEYCODE_DPAD_RIGHT)selected=(selected%3==2)?selected-2:selected+1;else if(k==KeyEvent.KEYCODE_DPAD_UP)selected=(selected+6)%9;else if(k==KeyEvent.KEYCODE_DPAD_DOWN)selected=(selected+3)%9;else return false;invalidate();return true;}
-        if(screen==Screen.LIST){if(k==KeyEvent.KEYCODE_BACK||k==KeyEvent.KEYCODE_SOFT_RIGHT){screen=Screen.MENU;invalidate();return true;}if(k==KeyEvent.KEYCODE_ENDCALL){screen=Screen.IDLE;invalidate();return true;}if(k==KeyEvent.KEYCODE_DPAD_CENTER||k==KeyEvent.KEYCODE_ENTER){input.setLength(0);screen=Screen.DETAIL;invalidate();return true;}if(k==KeyEvent.KEYCODE_DPAD_UP)row=(row+items[selected].length-1)%items[selected].length;else if(k==KeyEvent.KEYCODE_DPAD_DOWN)row=(row+1)%items[selected].length;else return false;invalidate();return true;}if(screen==Screen.DETAIL){if(k==KeyEvent.KEYCODE_BACK||k==KeyEvent.KEYCODE_SOFT_RIGHT){screen=Screen.LIST;invalidate();return true;}if(k==KeyEvent.KEYCODE_ENDCALL){screen=Screen.IDLE;invalidate();return true;}if(k>=KeyEvent.KEYCODE_0&&k<=KeyEvent.KEYCODE_9){input.append((char)('0'+k-KeyEvent.KEYCODE_0));invalidate();return true;}if(k==KeyEvent.KEYCODE_DEL&&input.length()>0){input.deleteCharAt(input.length()-1);invalidate();return true;}return false;}return false;}
+        if(screen==Screen.LIST){if(k==KeyEvent.KEYCODE_BACK||k==KeyEvent.KEYCODE_SOFT_RIGHT){screen=Screen.MENU;invalidate();return true;}if(k==KeyEvent.KEYCODE_ENDCALL){screen=Screen.IDLE;invalidate();return true;}if(k==KeyEvent.KEYCODE_DPAD_CENTER||k==KeyEvent.KEYCODE_ENTER){input.setLength(0);screen=Screen.DETAIL;invalidate();return true;}if(k==KeyEvent.KEYCODE_DPAD_UP)row=(row+items[selected].length-1)%items[selected].length;else if(k==KeyEvent.KEYCODE_DPAD_DOWN)row=(row+1)%items[selected].length;else return false;invalidate();return true;}if(screen==Screen.DETAIL){if(k==KeyEvent.KEYCODE_DPAD_CENTER||k==KeyEvent.KEYCODE_ENTER){actions.open(apps[selected],items[selected][row],input.toString());return true;}if(k==KeyEvent.KEYCODE_BACK||k==KeyEvent.KEYCODE_SOFT_RIGHT){screen=Screen.LIST;invalidate();return true;}if(k==KeyEvent.KEYCODE_ENDCALL){screen=Screen.IDLE;invalidate();return true;}if(k>=KeyEvent.KEYCODE_0&&k<=KeyEvent.KEYCODE_9){input.append((char)('0'+k-KeyEvent.KEYCODE_0));invalidate();return true;}if(k==KeyEvent.KEYCODE_DEL&&input.length()>0){input.deleteCharAt(input.length()-1);invalidate();return true;}return false;}return false;}
 
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX(),y=e.getY();if(y>getHeight()-70){if(x>getWidth()*.33f&&x<getWidth()*.67f)handleKey(new KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_DPAD_CENTER));else if(x>=getWidth()*.67f)handleKey(new KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_BACK));return true;}if(screen==Screen.MENU){int col=Math.min(2,(int)(x/(getWidth()/3f)));int r=Math.max(0,Math.min(2,(int)((y-54)/((getHeight()-104)/3f))));selected=r*3+col;invalidate();}return true;}
 }
