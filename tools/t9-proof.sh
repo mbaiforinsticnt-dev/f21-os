@@ -8,10 +8,35 @@ for _ in $(seq 1 60); do
 done
 $ADB shell service check package | grep -q "found"
 
+discover_ime() {
+  local match="$1" out=""
+  for _ in $(seq 1 15); do
+    out=$($ADB shell ime list -s 2>/dev/null | tr -d '\r' | grep -i "$match" || true)
+    out=${out%%$'\n'*}
+    if [ -n "$out" ]; then
+      printf '%s' "$out"
+      return 0
+    fi
+    sleep 2
+  done
+  echo "!! no IME matching '$match' after 15 tries; full 'ime list -s' output:" >&2
+  $ADB shell ime list -s >&2 || true
+  echo "!! installed packages matching IME vendors:" >&2
+  $ADB shell pm list packages | tr -d '\r' | grep -iE 'spanak|nyanya|ashivered' >&2 || true
+  return 1
+}
+
+start_harness() {
+  $ADB shell am force-stop dev.mbaiforinstinct.f21os || true
+  $ADB shell am start -W -n dev.mbaiforinstinct.f21os/.ImeHarnessActivity
+  sleep 3
+}
+
 run_ime() {
   local name="$1" match="$2"
   local apk
-  apk=$(find "imes/$name" -name '*.apk' | head -n 1)
+  apk=$(find "imes/$name" -name '*.apk')
+  apk=${apk%%$'\n'*}
   echo "== $name apk: $apk"
   for _ in 1 2 3; do
     $ADB install -r "$apk" && break
@@ -23,16 +48,16 @@ run_ime() {
     $ADB shell pm grant aiv.ashivered.qinboard.t9 android.permission.WRITE_EXTERNAL_STORAGE || true
   fi
   local imeid
-  imeid=$($ADB shell ime list -s | tr -d '\r' | grep -i "$match" | head -n 1)
+  imeid=$(discover_ime "$match")
   echo "== $name ime id: $imeid"
   $ADB shell ime enable "$imeid"
   $ADB shell ime set "$imeid"
+  echo "== $name active ime: $($ADB shell settings get secure default_input_method | tr -d '\r')"
   for _ in 1 2 3; do
     $ADB install -r app/build/outputs/apk/debug/app-debug.apk && break
     sleep 5
   done
-  $ADB shell am start -W -n dev.mbaiforinstinct.f21os/.ImeHarnessActivity
-  sleep 3
+  start_harness
   $ADB exec-out screencap -p > "screenshots-t9/$name-01-harness.png"
   # Stage 2: multi-tap attempt - "hi" (44 then 444, pauses to commit letters)
   $ADB shell input keyevent KEYCODE_4; sleep 0.3
@@ -41,7 +66,8 @@ run_ime() {
   $ADB shell input keyevent KEYCODE_4; sleep 0.3
   $ADB shell input keyevent KEYCODE_4; sleep 1.6
   $ADB exec-out screencap -p > "screenshots-t9/$name-02-multitap-hi.png"
-  # Stage 3: predictive attempt - 43556 ("hello" in T9)
+  # Stage 3: predictive attempt on a clean field - 43556 ("hello" in T9)
+  start_harness
   $ADB shell input keyevent KEYCODE_4; sleep 0.3
   $ADB shell input keyevent KEYCODE_3; sleep 0.3
   $ADB shell input keyevent KEYCODE_5; sleep 0.3
