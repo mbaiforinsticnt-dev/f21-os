@@ -2,15 +2,10 @@
 
 The final hardware-ready bundle contains:
 
-- `f21-os-launcher.apk` built from this repository.
-- `images/TraditionalT9.apk`: the default keyboard, built from the pinned sspanak/tt9 commit with English-only dictionaries by `rom/scripts/fetch-tt9.sh`. Injected at flash time to `/system/app/TraditionalT9/` by `rom/scripts/inject-f21-apps.sh`, which also installs the launcher as a priv-app and the allowlist below.
-- `images/privapp-permissions-f21os.xml`: privapp allowlist granting the launcher `WRITE_SECURE_SETTINGS` so it can apply (and self-heal) the default-IME setting on boot.
-- A pinned LineageOS 18.1 arm64 A/B vndklite GSI source image checksum and provenance record.
-- The reviewed F21 treble patch set with pinned commit SHA.
-- Debloat list and image-time debloat script.
-- Product overlays and launcher provisioning script.
-- Unlock/flash/restore runbook.
-- Stock dump hash helper and MT6761 guard.
-- Image and bundle SHA256 sums.
+- `images/f21-os-patched-lineage18.1-vndklite.img`: the LineageOS 18.1 arm64 A/B vndklite GSI after assembly-time mutation - F21 bluetooth and devinputjack overlays at `/vendor/overlay/`, the debloat list applied, Traditional T9 at `/system/app/TraditionalT9/` (a system "secure" app, which InputMethodManagerService requires of a default IME), the launcher at `/system/priv-app/F21Launcher/`, and the privapp allowlist at `/system/etc/permissions/`.
+- `tools/`: the assembly and device scripts (`apply-f21-patches.sh`, `debloat-image.sh`, `inject-f21-apps.sh`, `fetch-tt9.sh`, `hash-stock-dump.sh`, `verify-device.sh`).
+- `debloat-packages.txt`: the reviewed debloat list. Gallery, Music, Calendar, DeskClock and Calculator stay in the image because the launcher bridges to them.
+- `docs/`: the unlock/flash/restore runbook and buying guide.
+- `SHA256SUMS` covering every bundle file, plus the gzipped tarball and its own SHA256.
 
-The GSI binary is not committed here. `rom/assemble-package.sh` will fail closed until the approved upstream image and patch inputs are present and checksummed.
+`rom/assemble-package.sh` fails closed: it verifies the locked GSI checksum before use, converts a sparse image only when simg2img is present, and refuses to package unless every injected payload verifies inside the patched image. The GSI binary is not committed here.
