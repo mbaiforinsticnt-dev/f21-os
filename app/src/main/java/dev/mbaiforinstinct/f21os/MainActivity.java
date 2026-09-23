@@ -14,6 +14,7 @@ import dev.mbaiforinstinct.f21os.ui.S40LauncherView;
 
 /** Bridges the Nokia-style key shell to Android's hardware-backed system apps. */
 public final class MainActivity extends Activity implements S40LauncherView.Actions {
+    static volatile Intent lastBridgeIntent; // CI proof hook: the last intent the shell tried to fire.
     private S40LauncherView launcher;
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -33,6 +34,14 @@ public final class MainActivity extends Activity implements S40LauncherView.Acti
         else if(section.equals("Organiser")&&item.equals("Calendar")) i=new Intent(Intent.ACTION_VIEW, CalendarContract.CONTENT_URI);
         else if(section.equals("Settings")) i=new Intent(Settings.ACTION_SETTINGS);
         else if(section.equals("Applications")) i=new Intent(Settings.ACTION_APPLICATION_SETTINGS);
-        if(i!=null){try{startActivity(i);}catch(Exception ignored){startActivity(new Intent(Settings.ACTION_SETTINGS));}}
+        if(i!=null){lastBridgeIntent=i;try{startActivity(i);}catch(Exception ignored){startActivity(new Intent(Settings.ACTION_SETTINGS));}}
+    }
+
+    @Override public void call(String number){
+        Intent i=(number==null||number.isEmpty())
+            ? new Intent(Intent.ACTION_DIAL)
+            : new Intent(Intent.ACTION_DIAL, Uri.parse("tel:"+Uri.encode(number)));
+        lastBridgeIntent=i;
+        try{startActivity(i);}catch(Exception ignored){}
     }
 }
