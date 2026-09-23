@@ -7,7 +7,7 @@ This is an independent, unofficial project. It is not affiliated with Xiaomi, Du
 ## Current milestone
 
 - Functional key-first launcher: S40-style idle screen, 3x3 menu, hardware D-pad and centre-key navigation, working detail screens and numeric entry
-- Service bridge into Android facilities: contacts view and add, call log, messaging app and new-message composer, gallery, music, alarms, calendar and settings
+- Service bridge into Android facilities: contacts view and add, call log, messaging app and new-message composer, gallery, music, alarms, calendar and settings. Green-call-key dial flow: call log from idle, dial the entered number from a detail screen, dialler from anywhere else
 - Hardware-ready ROM package assembled and checksummed: LineageOS 18.1 arm64_bvS-vndklite GSI with F21 treble overlays and the launcher provisioned at /system/priv-app/F21OS (see rom/PACKAGE-MANIFEST.md)
 - Design baseline and physical-flash safety gates
 
